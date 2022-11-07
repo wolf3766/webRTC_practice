@@ -19,11 +19,26 @@ let remoteStream;
 let peerConnection;
 
 const servers={ //sturn server is created..needed in case of firewall 
-    iceServers:[
+    iceServers: [
         {
-            urls:['stun:stun1.1.google.com:19302','stun:stun2.1.google.com:19302']
-        }
-    ]
+          urls: "stun:openrelay.metered.ca:80",
+        },
+        {
+          urls: "turn:openrelay.metered.ca:80",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+        {
+          urls: "turn:openrelay.metered.ca:443",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+        {
+          urls: "turn:openrelay.metered.ca:443?transport=tcp",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+      ],
 }
 
 let init =async()=>{
@@ -92,8 +107,8 @@ peerConnection.ontrack=(event)=>{//if a user joins iterating its tracks
     })
 }
 peerConnection.onicecandidate=async (event)=>{ // icecandidate defines the connection properties 
-    if(event.candidate){ //incase of finding a candidate, log the candidate
-        client.sendMessageToPeer({text: JSON.stringify({'type':'candidate','candidate':event.candidate})},MemberId)
+    if(event.candidate){ //incase of finding a candidate
+        client.sendMessageToPeer({text: JSON.stringify({'type':'candidate','candidate':event.candidate})},MemberId) //agora api
     }
 }
 }
@@ -103,7 +118,7 @@ let createOffer=async (MemberId)=>{ //function to create offer
     let offer = await peerConnection.createOffer() //waiting for offer creation
     await peerConnection.setLocalDescription(offer);//specifies the properties of local end of the system
     
-    client.sendMessageToPeer({text: JSON.stringify({'type':'offer','offer':offer})},MemberId)
+    client.sendMessageToPeer({text: JSON.stringify({'type':'offer','offer':offer})},MemberId) //agora api
 
 }
 
@@ -124,12 +139,12 @@ let addAnswer =async (answer)=>{
     }
 }
 
-let leaveChannel=async () =>{
+let leaveChannel=async () =>{ //finding if user leaves
     await channel.leave();
     await client.logout();
 }
 
-let toggleCamera=async()=>{
+let toggleCamera=async()=>{ //toggling camera based on the current status
     let videoTrack=localStream.getTracks().find((track)=>track.kind=='video') 
     if(videoTrack.enabled){
         videoTrack.enabled=false
@@ -140,21 +155,21 @@ let toggleCamera=async()=>{
     }
 }
 
-let toggleMic=async()=>{
+let toggleMic=async()=>{ //toggling mic  based on the current status.
     let audioTrack=localStream.getTracks().find((track)=>track.kind=='audio') 
     if(audioTrack.enabled){
         audioTrack.enabled=false
         document.getElementById("mic-btn").style.backgroundColor="rgb(255,80,80)"
     }else{
         audioTrack.enabled=true
-        document.getElementById('mic-btn').style.backgroundColor='rgb(179,102,249,.9)'
+        document.getElementById('mic-btn').style.backgroundColor='rgb(179,102,249,0.9)'
     }
 }
 
 
-window.addEventListener('beforeunload',leaveChannel)
+window.addEventListener('beforeunload',leaveChannel) //browser api,if user closes the window
 
-document.getElementById("camera-btn").addEventListener('click',toggleCamera)
-document.getElementById("mic-btn").addEventListener('click',toggleMic)
+document.getElementById("camera-btn").addEventListener('click',toggleCamera) //onclick toggling the camera feature
+document.getElementById("mic-btn").addEventListener('click',toggleMic) //onclick toggling the mic feature
 
 init();
